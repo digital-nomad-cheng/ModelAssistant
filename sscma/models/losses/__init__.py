@@ -5,6 +5,7 @@ from .domain_focal_loss import DomainFocalLoss, DomainLoss, TargetLoss
 from .IouLoss import IoULoss
 from .nll_loss import NLLLoss
 from .pfld_loss import PFLDLoss
+from .kd_losses import KDLoss, BBoxMSELoss, FeatureMSELoss
 
 __all__ = [
     'LabelSmoothCrossEntropyLoss',
@@ -15,4 +16,7 @@ __all__ = [
     'TargetLoss',
     'DomainLoss',
     'IoULoss',
+    'KDLoss',
+    'BBoxMSELoss',
+    'FeatureMSELoss',
 ]
