@@ -422,9 +422,8 @@ def main():
             teacher_head=runner.model._kd_teacher.bbox_head,
         )
         total_loss = sum(det_losses.values()) + sum(kd_losses.values())
-        log_vars = {**det_losses, **kd_losses, 'loss': total_loss}
         optim_wrapper.update_params(total_loss)
-        return {'loss': total_loss, 'log_vars': log_vars, 'num_samples': len(data_samples)}
+        return {'loss': total_loss} #, 'det_losses': det_losses, 'kd_losses': kd_losses}
 
     runner.model.train_step = kd_train_step
 
