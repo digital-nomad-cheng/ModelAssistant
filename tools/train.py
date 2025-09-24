@@ -36,7 +36,6 @@ def _build_teacher_for_kd(cfg, runner_model):
 
     teacher_model = MODELS.build(teacher_raw.model)
     ckpt_path = teacher_cfg_info.get('checkpoint', None)
-    import pdb; pdb.set_trace()
     if ckpt_path and os.path.exists(ckpt_path):
         load_checkpoint(teacher_model, ckpt_path, map_location='cpu')
         print(f'[KD] Loaded teacher checkpoint: {ckpt_path}')
@@ -102,8 +101,8 @@ class _DistillManager:
 
     def _select(self, s, t, mask):
         # s,t shapes (B,A,C,H,W) or (B,A,1,H,W) or (B,A,4,H,W)
-        if mask.sum() == 0:
-            return s.view(0, s.shape[2]), t.view(0, t.shape[2])
+        if not mask.any():
+            return s.new_empty(0, s.shape[2]), t.new_empty(0, t.shape[2])
         if s.dim() == 5:
             s_sel = s.permute(0,1,3,4,2)[mask]  # (N,C)
             t_sel = t.permute(0,1,3,4,2)[mask]
@@ -121,7 +120,6 @@ class _DistillManager:
             with torch.no_grad():
                 t_raw = teacher_head.head_module(student_feats_tuple) if teacher_feats_tuple is None else teacher_head.head_module(teacher_feats_tuple)
             s_raw = student_head.head_module(student_feats_tuple)
-
         # Unpack raw outputs
         s_cls, s_bbox, s_obj = s_raw
         t_cls, t_bbox, t_obj = t_raw
