@@ -2,7 +2,7 @@ _base_ = ['swift_yolo_tiny_1xb16_300e_coco.py']
 
 # KD specific additions
 teacher = dict(
-    cfg='configs/swift_yolo/swift_yolo_medium_1xb16_300e_coco.py',
+    cfg='work_dirs/swift_yolo_medium_1xb16_300e_coco/swift_yolo_medium_1xb16_300e_coco.py',
     checkpoint='work_dirs/swift_yolo_medium_1xb16_300e_coco/best_coco_bbox_mAP_epoch_5.pth',
     frozen=True,
     eval_bn=True,
