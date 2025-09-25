@@ -80,26 +80,41 @@ class FeatureMSELoss(nn.Module):
         self.adapters = nn.ModuleList()  # will align to number of feature pairs
         self._built = False
 
-    def _build_if_needed(self, student_feats, teacher_feats):
+    def _build_if_needed(self, student_feats, teacher_feats, device, dtype):
         if self._built:
             return
+        if len(student_feats) != len(teacher_feats):
+            raise AssertionError(
+                f'Feature list length mismatch: student={len(student_feats)} teacher={len(teacher_feats)}'
+            )
         for s, t in zip(student_feats, teacher_feats):
             if s.shape[1] != t.shape[1] and self.project_if_mismatch:
-                self.adapters.append(nn.Conv2d(s.shape[1], t.shape[1], 1, bias=False))
+                adapt = nn.Conv2d(s.shape[1], t.shape[1], 1, bias=False)
             else:
-                self.adapters.append(nn.Identity())
+                adapt = nn.Identity()
+            self.adapters.append(adapt.to(device=device, dtype=dtype))
         self._built = True
 
     def forward(self, student_feats, teacher_feats):
-        if len(student_feats) == 0:
-            return torch.tensor(0.0, device=teacher_feats[0].device if teacher_feats else 'cpu')
-        self._build_if_needed(student_feats, teacher_feats)
+        if not student_feats or not teacher_feats:
+            # graceful zero
+            dev = (student_feats[0].device if student_feats
+                   else teacher_feats[0].device if teacher_feats
+                   else 'cpu')
+            return torch.tensor(0.0, device=dev)
+        device = student_feats[0].device
+        dtype = student_feats[0].dtype
+        self._build_if_needed(student_feats, teacher_feats, device, dtype)
+
         losses = []
         for s, t, adapt in zip(student_feats, teacher_feats, self.adapters):
-            if s.shape[2:] != t.shape[2:]:  # spatial resize if needed
-                s = torch.nn.functional.interpolate(s, size=t.shape[2:], mode='bilinear', align_corners=False)
+            if s.shape[2:] != t.shape[2:]:
+                s = F.interpolate(s, size=t.shape[2:], mode='bilinear', align_corners=False)
+            # Ensure adapter on correct device/dtype even if model moved after build
+            if adapt is not None and (next(adapt.parameters(), torch.empty(0)).device != device):
+                adapt.to(device=device, dtype=dtype)
             s_adapt = adapt(s)
             losses.append(F.mse_loss(s_adapt, t.detach(), reduction='mean'))
         if not losses:
-            return torch.tensor(0.0, device=student_feats[0].device)
+            return torch.tensor(0.0, device=device)
         return sum(losses) / len(losses) * self.loss_weight
