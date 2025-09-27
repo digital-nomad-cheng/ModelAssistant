@@ -54,3 +54,6 @@ docs/.vitepress/dist
 
 # sscma examples
 examples/
+# pixi environments
+.pixi/*
+!.pixi/config.toml
