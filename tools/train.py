@@ -114,7 +114,20 @@ class _DistillManager:
         device = student_feats_tuple[0].device
         zeros = lambda: torch.tensor(0.0, device=device)
         if epoch < self.start_epoch:
-            return dict(kd_loss_cls=zeros(), kd_loss_obj=zeros(), kd_loss_bbox=zeros(), kd_loss_feat=zeros())
+            # Build zero dict using configured keys
+            out = {}
+            for key in ['cls','obj','bbox','feat','cwd']:
+                if key in self.loss_builders:
+                    out[f'kd_loss_{key}'] = zeros()
+            # Ensure at least one key for logging stability
+            if not out:
+                out['kd_loss_cwd'] = zeros()
+            return out
+
+        # Fast path: only channel-wise distillation requested
+        if set(self.loss_builders.keys()).issubset({'cwd'}):
+            loss_val = self.loss_builders['cwd'](student_feats_tuple, teacher_feats_tuple)
+            return dict(kd_loss_cwd=loss_val)
 
         with torch.cuda.amp.autocast(enabled=torch.is_autocast_enabled()):
             with torch.no_grad():
@@ -148,7 +161,13 @@ class _DistillManager:
             s_bbox_all.append(sb_sel)
             t_bbox_all.append(tb_sel)
         if len(s_cls_all) == 0:
-            return dict(kd_loss_cls=zeros(), kd_loss_obj=zeros(), kd_loss_bbox=zeros(), kd_loss_feat=zeros())
+            out = {}
+            for key in ['cls','obj','bbox','feat','cwd']:
+                if key in self.loss_builders:
+                    out[f'kd_loss_{key}'] = zeros()
+            if not out:
+                out['kd_loss_cwd'] = zeros()
+            return out
 
         s_cls_cat = torch.cat(s_cls_all, 0)
         t_cls_cat = torch.cat(t_cls_all, 0)
@@ -173,11 +192,16 @@ class _DistillManager:
             losses['kd_loss_bbox'] = self.loss_builders['bbox'](s_bbox_cat, t_bbox_cat)
         else:
             losses['kd_loss_bbox'] = zeros()
-        # Feature KD
+        # Feature KD (raw spatial MSE style)
         if 'feat' in self.loss_builders:
             losses['kd_loss_feat'] = self.loss_builders['feat'](student_feats_tuple, teacher_feats_tuple)
         else:
             losses['kd_loss_feat'] = zeros()
+        # Channel-wise distribution KD
+        if 'cwd' in self.loss_builders:
+            losses['kd_loss_cwd'] = self.loss_builders['cwd'](student_feats_tuple, teacher_feats_tuple)
+        else:
+            losses['kd_loss_cwd'] = zeros()
         return losses
 
 
@@ -423,6 +447,7 @@ def main():
         )
         total_loss = sum(det_losses.values()) + sum(kd_losses.values())
         optim_wrapper.update_params(total_loss)
+        print(" | ".join([f"{k}:{v.item():.3f}" for k,v in {**det_losses, **kd_losses}.items()]))
         return {'loss': total_loss} #, 'det_losses': det_losses, 'kd_losses': kd_losses}
 
     runner.model.train_step = kd_train_step
