@@ -15,6 +15,6 @@ kd = dict(
     losses=dict(
         # method='spatial' implements paper's per-channel spatial distribution KL.
         # High loss_weight=10.0 retained from your edit; tune if instability occurs.
-        cwd=dict(type='ChannelWiseDistillLoss', tau=2.0, method='spatial', loss_weight=10.0),
+        cwd=dict(type='ChannelWiseDistillLoss', tau=2.0, loss_weight=10.0),
     ),
 )
