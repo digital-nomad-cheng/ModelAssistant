@@ -66,4 +66,6 @@ data/
 datasets/
 
 # quantization
-out/
+out/# pixi environments
+.pixi/*
+!.pixi/config.toml
