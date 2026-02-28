@@ -104,20 +104,20 @@ def add_mim_extension():
     """Add extra files that are required to support MIM into the package.
 
     These files will be added by creating a symlink to the originals if the
-    package is installed in `editable` mode (e.g. pip install -e .), or by
+    package is installed in `editable` mode (e.g. pixi install), or by
     copying from the originals otherwise.
     """
 
     # parse installment mode
     if 'develop' in sys.argv:
-        # installed by `pip install -e .`
+        # installed by `pixi install`
         if platform.system() == 'Windows':
             # set `copy` mode here since symlink fails on Windows.
             mode = 'copy'
         else:
             mode = 'symlink'
     elif 'sdist' in sys.argv or 'bdist_wheel' in sys.argv:
-        # installed by `pip install .`
+        # installed by `pixi run build`
         # or create source distribution by `python setup.py sdist`
         mode = 'copy'
     else:
@@ -168,7 +168,6 @@ if __name__ == '__main__':
         include_package_data=True,
         classifiers=[
             'Development Status :: 4 - Beta',
-            'License :: OSI Approved :: Apache Software License',
             'Operating System :: OS Independent',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.7',
@@ -179,5 +178,4 @@ if __name__ == '__main__':
         ],
         python_requires='>=3.7',
         license='Apache License 2.0',
-        install_requires=parse_requirements('requirements.txt'),
         zip_safe=False)

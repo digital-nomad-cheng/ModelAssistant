@@ -61,13 +61,8 @@ micromamba activate sscma
 
 :::code-group
 
-```sh [pip]
-python3 -m pip install -r requirements.txt
-```
-
-```sh [uv]
-python3 -m pip install uv && \
-uv install -r requirements.txt
+```sh [pixi]
+pixi install
 ```
 
 :::

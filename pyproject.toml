@@ -1,0 +1,22 @@
+[project]
+authors = [{name = "SenseCraft", email = "test@example.com"}]
+dependencies = ["addict", "termcolor", "torch-tb-profiler", "terminaltables", "pycocotools", "lance", "shapely", "torch>=2.1.0", "torchvision>=0.16.0", "torchaudio>=2.1.0", "tensorboard", "opencv-python>=4.6.0", "numpy>=1.23.0,<2.0.0", "pillow>=7.1.2", "torchinfo", "yapf", "rich", "pyyaml", "tqdm", "pyarrow", "albumentations", "scikit-learn", "timm", "psutil", "regex", "pytest>=9.0.2,<10", "matplotlib>=3.10.8,<4"]
+name = "sscma"
+requires-python = ">= 3.10"
+dynamic = ["version", "description", "readme", "license", "keywords", "classifiers"]
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61.0.0"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+sscma = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "3.10.*"
