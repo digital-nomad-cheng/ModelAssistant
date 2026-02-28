@@ -258,6 +258,40 @@ def main():
         ), "The dump file must be a pkl file."
         runner.test_evaluator.metrics.append(DumpResults(out_file_path=args.out))
 
+    try:
+        import mlflow
+        if mlflow.active_run():
+            if "torchscript" in new_model_format:
+                f = f"{osp.splitext(args.checkpoint)[0]}_script.pt"
+                if osp.exists(f):
+                    mlflow.log_artifact(f)
+            if "onnx" in new_model_format:
+                if osp.exists(onnx_file):
+                    mlflow.log_artifact(onnx_file)
+            if "hailo" in new_model_format:
+                har_file = f"{osp.dirname(onnx_file)}{osp.sep}{osp.splitext(osp.basename(onnx_file))[0]}.har"
+                har_quant_file = f"{osp.dirname(onnx_file)}{osp.sep}{osp.splitext(osp.basename(onnx_file))[0]}_quant.har"
+                hef_file = f"{osp.dirname(onnx_file)}{osp.sep}{osp.splitext(osp.basename(onnx_file))[0]}.hef"
+                if osp.exists(har_file):
+                    mlflow.log_artifact(har_file)
+                if osp.exists(har_quant_file):
+                    mlflow.log_artifact(har_quant_file)
+                if osp.exists(hef_file):
+                    mlflow.log_artifact(hef_file)
+            if "savemodel" in new_model_format:
+                if osp.exists(osp.dirname(onnx_file)):
+                    mlflow.log_artifacts(osp.dirname(onnx_file))
+            if "tflite" in new_model_format:
+                if osp.exists(tflite_file):
+                    mlflow.log_artifact(tflite_file)
+            if "vela" in new_model_format:
+                file_stem = osp.splitext(osp.basename(tflite_file))[0]
+                vela_file = osp.join(osp.dirname(tflite_file), f"{file_stem}_vela.tflite")
+                if osp.exists(vela_file):
+                    mlflow.log_artifact(vela_file)
+    except ImportError:
+        pass
+
 
 @lazy_import("onnx2tf", install_only=True)
 @lazy_import("tf-keras", install_only=True)
